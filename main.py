@@ -4,7 +4,7 @@ from gdrive import GoogleDriveModule
 from dotenv import load_dotenv
 from raft import RaftSaver
 
-def clearOutput(filename):
+def clearOutput(filename=""):
   if (os.path.isfile("out.txt")):
     os.system("del out.txt")
   if (filename != "" and os.path.isfile(filename)):
@@ -50,7 +50,8 @@ if __name__ == "__main__":
   drive_mod = GoogleDriveModule(BASE64_GOOGLE_CREDENTIALS)
   world_path = getWorldPath(getRaftFolder())
   saver = RaftSaver(driveModule=drive_mod, world_path=world_path)
-  saver.save("CollabWorld")
+  saver.save()
+  clearOutput()
 
 
   
