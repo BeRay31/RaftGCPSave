@@ -4,3 +4,4 @@ __pycache__/
 out.txt
 token.json
 zipped-*
+*-saved*
