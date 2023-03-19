@@ -36,7 +36,6 @@ class RaftSaver:
       raise BaseException("Create Zip ERROR")
 
     os.system(f"rd /s /q temp")
-    os.system("dir /b")
 
   def load(self) -> None:
     # download and apply save data
