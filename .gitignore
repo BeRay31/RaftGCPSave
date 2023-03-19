@@ -1,0 +1,6 @@
+.env
+env/
+__pycache__/
+out.txt
+token.json
+zipped-*
