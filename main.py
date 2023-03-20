@@ -73,8 +73,6 @@ if __name__ == "__main__":
   while menu != 0:
     menu = selectOptions(menu_options,"Select Option: ")
     processMenu(menu, saver)
-    
-
 
   clearOutput()
 

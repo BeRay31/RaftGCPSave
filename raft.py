@@ -79,6 +79,7 @@ class RaftSaver:
     except Exception as err:
       print(err)
       return
+    
     saveFile = self.gdrive.downloadFile(world_to_load[0], f'{world_to_load[1]}.zip')
     world_name_py = world_to_load[1]
     world_name = f'"{world_name_py}"'
@@ -86,11 +87,12 @@ class RaftSaver:
     if os.path.isdir(os.path.join(self.world_py_path, world_name_py)):
       os.system(f'rd /s /q {os.path.join(self.world_path, world_name)}')
 
-    with zipfile.ZipFile(f"{world_name_py}-saved.zip", 'r') as zipf:
+    with zipfile.ZipFile(saveFile, 'r') as zipf:
       zipf.extractall(self.world_py_path)
 
     if not os.path.isdir(os.path.join(self.world_py_path, world_name_py)):
       raise BaseException("Load Save ERROR")
 
     print(f"Load Complete ({world_name})")
+    os.system(f'del "{world_name}".zip')
     time.sleep(1)

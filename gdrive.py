@@ -64,7 +64,7 @@ class GoogleDriveModule:
   def getSpecificFilenameIds(self, filename) -> list:
     ids = []
     response = self.driveService.files().list(
-      q=f"name='{filename}' and mimeType='application/zip'",
+      q=f"name='{filename}' and mimeType='application/zip' and trashed = false",
       spaces='drive',
       fields='files(id, name)'
     ).execute()
@@ -79,7 +79,7 @@ class GoogleDriveModule:
     page_token = None
     while True:
       response = self.driveService.files().list(
-        q=f"'{self.raftFolderId}' in parents and mimeType='application/zip'",
+        q=f"'{self.raftFolderId}' in parents and mimeType='application/zip' and trashed = false",
         spaces='drive',
         fields='nextPageToken, files(id, name)',
         pageToken=page_token
