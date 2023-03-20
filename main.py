@@ -1,5 +1,5 @@
 import os
-from util import openAndReadFile, confirmationInput
+from util import openAndReadFile, confirmationInput, selectOptions
 from gdrive import GoogleDriveModule
 from dotenv import load_dotenv
 from raft import RaftSaver
@@ -44,16 +44,6 @@ def getWorldPath(raft_folder: str) -> str:
     clearOutput()
   return os.path.join(raft_folder, target_raft_user, "World")
 
-def getInputMenu():
-  menu = -1
-  while menu < 1 or menu > 3:
-    print("1. Save to Cloud")
-    print("2. Load from Cloud")
-    print("3. Exit Program")
-    print("Select Option: ", end="")
-    menu = int(input())
-  return menu
-
 def processMenu(menu, saver: RaftSaver):
   os.system("cls")
   match menu:
@@ -66,14 +56,21 @@ def processMenu(menu, saver: RaftSaver):
 if __name__ == "__main__":
   load_dotenv()
   BASE64_GOOGLE_CREDENTIALS = os.getenv("GOOGLE_API_CREDS_BASE64")
+  
   drive_mod = GoogleDriveModule(BASE64_GOOGLE_CREDENTIALS)
   world_path = getWorldPath(getRaftFolder())
   saver = RaftSaver(driveModule=drive_mod, world_path=world_path)
-
-  menu = getInputMenu()
-  while menu != 3:
+  
+  menu_options = [
+    "Exit",
+    "Save To Cloud",
+    "Load from Cloud"
+  ]
+  
+  menu = selectOptions(menu_options,"Select Option: ")
+  while menu != 0:
     processMenu(menu, saver)
-    menu = getInputMenu()
+    menu = selectOptions(menu_options,"Select Option: ")
 
   clearOutput()
 
