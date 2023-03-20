@@ -80,7 +80,7 @@ class RaftSaver:
       print(err)
       return
     
-    saveFile = self.gdrive.downloadFile(world_to_load[0], f'{world_to_load[1]}.zip')
+    saveFile = self.gdrive.downloadFile(world_to_load[0], "temp.zip")
     world_name_py = world_to_load[1]
     world_name = f'"{world_name_py}"'
 
@@ -94,5 +94,4 @@ class RaftSaver:
       raise BaseException("Load Save ERROR")
 
     print(f"Load Complete ({world_name})")
-    os.system(f'del "{world_name}".zip')
-    time.sleep(1)
+    os.system(f'del temp.zip')
