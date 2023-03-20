@@ -34,7 +34,6 @@ class GoogleDriveModule:
         oAuthCreds = flowAuth.run_local_server(port=0)
       with open('token.json', 'w') as token:
         token.write(oAuthCreds.to_json())
-    self.clientId = oAuthCreds.client_id.split("-")[0]
     self.driveService = build('drive', 'v3', credentials=oAuthCreds)
     self.raftFolderId = self.getOrCreateRaftFolderId(save_folder_name, force_create, is_shared)
   
@@ -47,7 +46,7 @@ class GoogleDriveModule:
       spaces='drive',
       fields='files(id, name)'
     ).execute()
-
+    print(response)
     for file in response.get('files', []):
       return file.get("id")
 
@@ -99,14 +98,13 @@ class GoogleDriveModule:
     return saveFiles
 
   def uploadFile(self, filepath, mimetype, filename) -> None:
-    finalname = f'{filename}-{self.clientId}'
-    ids = self.getSpecificFilenameIds(finalname)
+    ids = self.getSpecificFilenameIds(filename)
     for id in ids:
       self.driveService.files().delete(fileId=id).execute()
       print(f"Deleted duplicate save file with Id {id}")
 
     file_meta = {
-      'name': finalname,
+      'name': filename,
       'parents': [self.raftFolderId]
     }
 
@@ -115,14 +113,24 @@ class GoogleDriveModule:
       mimetype
     )
 
-    file = self.driveService.files().create(
+    response = self.driveService.files().create(
       body=file_meta,
       media_body=media,
-      fields='id'
+      fields='id, owners(emailAddress)'
     ).execute()
-    
-    print(f"File '{filepath}' has been uploaded as '{finalname}' with Id: {file.get('id')}")
-    return file.get('id')
+
+    # Edit filename
+    finalname = f"{filename}-{response.get('owners')[0].get('emailAddress')}"
+    ids = self.getSpecificFilenameIds(finalname)
+    for id in ids:
+      self.driveService.files().delete(fileId=id).execute()
+      print(f"Deleted duplicate named save file with Id {id}")
+    newBody = { 'name': finalname }
+    # Update meta
+    self.driveService.files().update(fileId=response.get('id'), body=newBody).execute()
+
+    print(f"File '{filepath}' has been uploaded as '{finalname}' with Id: {response.get('id')}")
+    return response.get('id')
 
 
   def downloadFile(self, file_id, filename):
