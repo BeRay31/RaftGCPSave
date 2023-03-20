@@ -51,6 +51,8 @@ def processMenu(menu, saver: RaftSaver):
       saver.save()
     case 2:
       saver.load()
+  if menu != 0:
+    input("Press enter to continue.....")
   os.system("cls")
 
 if __name__ == "__main__":
@@ -67,10 +69,12 @@ if __name__ == "__main__":
     "Load from Cloud"
   ]
   
-  menu = selectOptions(menu_options,"Select Option: ")
+  menu = -1
   while menu != 0:
-    processMenu(menu, saver)
     menu = selectOptions(menu_options,"Select Option: ")
+    processMenu(menu, saver)
+    
+
 
   clearOutput()
 

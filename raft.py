@@ -29,9 +29,10 @@ class RaftSaver:
       print(err)
       return
 
-    filename = f"{world_name}-saved.zip"
+    filename = f"{world_name}.zip"
     filepath = os.path.join(self.world_path, f'"{world_name}"')
 
+    print()
     print(f"Zipping {world_name}...")
     os.system(f'xcopy {filepath} "{world_name}"\\ /EY > out.txt')
     with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -41,12 +42,23 @@ class RaftSaver:
 
     if not os.path.isfile(os.path.join(os.path.curdir, filename)):
       raise BaseException("Create Zip ERROR")
+    print(f"Zipped as {filename}")
+    print()
 
     # Upload gdrive
+    print(f"Upload to GDrive")
+    self.gdrive.uploadFile(
+      filepath=filename,
+      mimetype="application/zip",
+      filename=world_name
+    )
 
+    # Clean up
     os.system(f'rd /s /q "{world_name}"')
-    print(f"Saving Complete ({world_name})")
-    time.sleep(1)
+    os.system(f'del "{world_name}".zip')
+
+    print()
+    print(f"Saving Complete ({world_name})!")
 
   def load(self) -> None:
     # download and apply save data
