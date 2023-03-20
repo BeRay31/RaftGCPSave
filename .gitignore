@@ -7,3 +7,4 @@ zipped-*
 *-saved*
 build/
 dist/
+run.sh
