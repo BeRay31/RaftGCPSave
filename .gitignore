@@ -5,3 +5,5 @@ out.txt
 token.json
 zipped-*
 *-saved*
+build/
+dist/

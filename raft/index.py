@@ -3,7 +3,6 @@ from util import selectOptions
 import os
 import zipfile
 from util import openAndReadFile
-import time
 
 class RaftSaver:
   def __init__(self, world_path: str, driveModule: GoogleDriveModule) -> None:
@@ -81,7 +80,7 @@ class RaftSaver:
       return
     
     saveFile = self.gdrive.downloadFile(world_to_load[0], "temp.zip")
-    world_name_py = world_to_load[1]
+    world_name_py = world_to_load[1].split("-")[0]
     world_name = f'"{world_name_py}"'
 
     if os.path.isdir(os.path.join(self.world_py_path, world_name_py)):

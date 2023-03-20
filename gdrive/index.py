@@ -34,7 +34,7 @@ class GoogleDriveModule:
         oAuthCreds = flowAuth.run_local_server(port=0)
       with open('token.json', 'w') as token:
         token.write(oAuthCreds.to_json())
-
+    self.clientId = oAuthCreds.client_id.split("-")[0]
     self.driveService = build('drive', 'v3', credentials=oAuthCreds)
     self.raftFolderId = self.getOrCreateRaftFolderId(save_folder_name, force_create, is_shared)
   
@@ -99,13 +99,14 @@ class GoogleDriveModule:
     return saveFiles
 
   def uploadFile(self, filepath, mimetype, filename) -> None:
-    ids = self.getSpecificFilenameIds(filename)
+    finalname = f'{filename}-{self.clientId}'
+    ids = self.getSpecificFilenameIds(finalname)
     for id in ids:
-      print(f"Deleted duplicate save file with Id {id}")
       self.driveService.files().delete(fileId=id).execute()
+      print(f"Deleted duplicate save file with Id {id}")
 
     file_meta = {
-      'name': filename,
+      'name': finalname,
       'parents': [self.raftFolderId]
     }
 
@@ -120,7 +121,7 @@ class GoogleDriveModule:
       fields='id'
     ).execute()
     
-    print(f"File '{filepath}' has been uploaded as '{filename}' with Id: {file.get('id')}")
+    print(f"File '{filepath}' has been uploaded as '{finalname}' with Id: {file.get('id')}")
     return file.get('id')
 
 
