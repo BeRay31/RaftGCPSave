@@ -14,8 +14,20 @@ class RaftSaver:
   def selectWorldFromLocal(self):
     os.system(f"dir /b {self.world_path} > out.txt")
     worlds = openAndReadFile("out.txt")
-    worlds.insert(0, "cancel")
+    worlds.insert(0, "Cancel")
     selected_world_index = selectOptions(worlds, "Select world to save: ")
+    if selected_world_index != 0:
+       return worlds[selected_world_index]
+    else:
+      raise Exception("Cancel action")
+    
+  def selectWorldFromCloud(self):
+    worlds = self.gdrive.getAllSaveFileIds()
+    worlds.insert(0, ("-1", "Cancel"))
+    world_name = []
+    for w in worlds:
+      world_name.append(w[1])
+    selected_world_index = selectOptions(world_name, "Select world to load: ")
     if selected_world_index != 0:
        return worlds[selected_world_index]
     else:
@@ -62,8 +74,14 @@ class RaftSaver:
 
   def load(self) -> None:
     # download and apply save data
-    world_name = '"Beray solo no cheat!"'
-    world_name_py = "Beray solo no cheat!"
+    try:
+      world_to_load = self.selectWorldFromCloud()
+    except Exception as err:
+      print(err)
+      return
+    saveFile = self.gdrive.downloadFile(world_to_load[0], f'{world_to_load[1]}.zip')
+    world_name_py = world_to_load[1]
+    world_name = f'"{world_name_py}"'
 
     if os.path.isdir(os.path.join(self.world_py_path, world_name_py)):
       os.system(f'rd /s /q {os.path.join(self.world_path, world_name)}')

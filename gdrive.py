@@ -3,12 +3,14 @@ from __future__ import print_function
 import base64
 import json
 import os
+import io
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES_PERMISSION = [
   'https://www.googleapis.com/auth/drive'
@@ -34,27 +36,61 @@ class GoogleDriveModule:
         token.write(oAuthCreds.to_json())
 
     self.driveService = build('drive', 'v3', credentials=oAuthCreds)
-    self.raftFolderId = self.getRaftFolderId()
+    self.raftFolderId = self.getOrCreateRaftFolderId()
   
-  def getRaftFolderId(self) -> str:
-    response = self.driveService.files().list(q="mimeType='application/vnd.google-apps.folder' and name='RaftSave'",
-                                    spaces='drive',
-                                    fields='files(id, name)').execute()
+  def getOrCreateRaftFolderId(self) -> str:
+    response = self.driveService.files().list(
+      q="mimeType='application/vnd.google-apps.folder' and name='RaftSaveData' and trashed = false",
+      spaces='drive',
+      fields='files(id, name)'
+    ).execute()
+
     for file in response.get('files', []):
       return file.get("id")
 
-    return ""
+    # not found | create new one
+    file_metadata = {
+        'name': 'RaftSaveData',
+        'mimeType': 'application/vnd.google-apps.folder'
+    }
+
+    file = self.driveService.files().create(
+      body=file_metadata,
+      fields='id'
+    ).execute()
+
+    return file.get('id')
   
   def getSpecificFilenameIds(self, filename) -> list:
     ids = []
-    response = self.driveService.files().list(q=f"name='{filename}' and mimeType='application/zip'",
-                                    spaces='drive',
-                                    fields='files(id, name)').execute()
+    response = self.driveService.files().list(
+      q=f"name='{filename}' and mimeType='application/zip'",
+      spaces='drive',
+      fields='files(id, name)'
+    ).execute()
     for file in response.get('files', []):
       print(F'Found file: {file.get("name")}, {file.get("id")}')
       ids.append(file.get("id"))
 
     return ids
+
+  def getAllSaveFileIds(self) -> list:
+    saveFiles = []
+    page_token = None
+    while True:
+      response = self.driveService.files().list(
+        q=f"'{self.raftFolderId}' in parents and mimeType='application/zip'",
+        spaces='drive',
+        fields='nextPageToken, files(id, name)',
+        pageToken=page_token
+      ).execute()
+      for file in response.get('files', []):
+        saveFiles.append((file.get("id"), file.get("name")))
+      page_token = response.get('nextPageToken', None)
+      if page_token is None:
+          break
+
+    return saveFiles
 
   def uploadFile(self, filepath, mimetype, filename) -> None:
     ids = self.getSpecificFilenameIds(filename)
@@ -82,3 +118,16 @@ class GoogleDriveModule:
     return file.get('id')
 
 
+  def downloadFile(self, file_id, filename):
+    request = self.driveService.files().get_media(fileId=file_id)
+    file = io.BytesIO()
+    downloader = MediaIoBaseDownload(file, request)
+    done = False
+    while done is False:
+      status, done = downloader.next_chunk()
+      print(F'Download {int(status.progress() * 100)}.')
+    
+    with open(filename, 'wb') as dest:
+      dest.write(file.getvalue())
+
+    return filename
