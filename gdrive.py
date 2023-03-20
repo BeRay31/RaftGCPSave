@@ -17,7 +17,7 @@ SCOPES_PERMISSION = [
 ]
 
 class GoogleDriveModule:
-  def __init__(self, BASE64_GOOGLE_CREDENTIALS) -> None:
+  def __init__(self, creds, save_folder_name, force_create, is_shared) -> None:
     oAuthCreds = None
 
     if os.path.exists('token.json'):
@@ -28,7 +28,7 @@ class GoogleDriveModule:
         oAuthCreds.refresh(Request())
       else:
         flowAuth = InstalledAppFlow.from_client_config(
-          client_config=json.loads(base64.b64decode(BASE64_GOOGLE_CREDENTIALS)),
+          client_config=json.loads(base64.b64decode(creds)),
           scopes=SCOPES_PERMISSION
         )
         oAuthCreds = flowAuth.run_local_server(port=0)
@@ -36,11 +36,14 @@ class GoogleDriveModule:
         token.write(oAuthCreds.to_json())
 
     self.driveService = build('drive', 'v3', credentials=oAuthCreds)
-    self.raftFolderId = self.getOrCreateRaftFolderId()
+    self.raftFolderId = self.getOrCreateRaftFolderId(save_folder_name, force_create, is_shared)
   
-  def getOrCreateRaftFolderId(self) -> str:
+  def getOrCreateRaftFolderId(self, save_folder_name: str, force_create: bool, is_shared: bool) -> str:
+    query = f"mimeType='application/vnd.google-apps.folder' and name='{save_folder_name}' and trashed = false"
+    if is_shared:
+      query += "and sharedWithMe"
     response = self.driveService.files().list(
-      q="mimeType='application/vnd.google-apps.folder' and name='RaftSaveData' and trashed = false",
+      q=query,
       spaces='drive',
       fields='files(id, name)'
     ).execute()
@@ -49,18 +52,21 @@ class GoogleDriveModule:
       return file.get("id")
 
     # not found | create new one
-    file_metadata = {
-        'name': 'RaftSaveData',
+    if force_create:
+      file_metadata = {
+        'name': save_folder_name,
         'mimeType': 'application/vnd.google-apps.folder'
-    }
+      }
 
-    file = self.driveService.files().create(
-      body=file_metadata,
-      fields='id'
-    ).execute()
+      file = self.driveService.files().create(
+        body=file_metadata,
+        fields='id'
+      ).execute()
 
-    return file.get('id')
-  
+      return file.get('id')
+
+    raise Exception("Failed load save folder: No folder found")
+
   def getSpecificFilenameIds(self, filename) -> list:
     ids = []
     response = self.driveService.files().list(

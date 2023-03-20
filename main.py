@@ -58,21 +58,26 @@ def processMenu(menu, saver: RaftSaver):
 if __name__ == "__main__":
   load_dotenv()
   BASE64_GOOGLE_CREDENTIALS = os.getenv("GOOGLE_API_CREDS_BASE64")
-  
-  drive_mod = GoogleDriveModule(BASE64_GOOGLE_CREDENTIALS)
-  world_path = getWorldPath(getRaftFolder())
-  saver = RaftSaver(driveModule=drive_mod, world_path=world_path)
-  
-  menu_options = [
-    "Exit",
-    "Save To Cloud",
-    "Load from Cloud"
-  ]
-  
-  menu = -1
-  while menu != 0:
-    menu = selectOptions(menu_options,"Select Option: ")
-    processMenu(menu, saver)
+  RAFT_FOLDER_NAME = os.getenv("RAFT_FOLDER_NAME")
+  CREATE_IFN_EXIST = os.getenv("CREATE_IFN_EXIST") == "1"
+  IS_SHARED_FOLDER = os.getenv("IS_SHARED_FOLDER") == "1"
+  try:
+    drive_mod = GoogleDriveModule(BASE64_GOOGLE_CREDENTIALS, RAFT_FOLDER_NAME, CREATE_IFN_EXIST, IS_SHARED_FOLDER)
+    world_path = getWorldPath(getRaftFolder())
+    saver = RaftSaver(driveModule=drive_mod, world_path=world_path)
+    
+    menu_options = [
+      "Exit",
+      "Save To Cloud",
+      "Load from Cloud"
+    ]
+    
+    menu = -1
+    while menu != 0:
+      menu = selectOptions(menu_options,"Select Option: ")
+      processMenu(menu, saver)
+  except Exception as err:
+    print(err)
 
   clearOutput()
 
